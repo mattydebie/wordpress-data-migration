@@ -1,0 +1,16 @@
+{
+  "name": "madebit/wordpress-data-migration",
+  "type": "library",
+  "authors": [
+    {
+      "name": "Matthias De Bie",
+      "email": "mattydebie@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Madebit\\WordpressDataMigration\\": "/src"
+    }
+  },
+  "require": {}
+}
