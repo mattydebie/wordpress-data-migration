@@ -45,7 +45,7 @@ class DataMigration
   static private function upgrade_from_to($from, $to)
   {
     error_log(sprintf("Migrate version %s to %s", $from, $to));
-    $this->forMigrations(
+    DataMigration::forMigrations(
       fn($version) => $version > $from && $version <= $to,
       fn() => up()
     );
@@ -94,6 +94,6 @@ class DataMigration
 
     DataMigration::check_migration();
 
-    return json_encode($request->get_params());
+    return 'OK';
   }
 }
