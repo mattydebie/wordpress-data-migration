@@ -47,7 +47,7 @@ class DataMigration
     error_log(sprintf("Migrate version %s to %s", $from, $to));
     DataMigration::forMigrations(
       fn($version) => $version > $from && $version <= $to,
-      fn() => up()
+      fn($class) => $class->up()
     );
   }
 
@@ -56,7 +56,7 @@ class DataMigration
     error_log(sprintf("Migrate version %s to %s", $from, $to));
     DataMigration::forMigrations(
       fn($v) => $v < $from && $v >= $to,
-      fn() => down(),
+      fn($class) => $class->down(),
       true
     );
   }
@@ -67,33 +67,42 @@ class DataMigration
     if ($reverse) $files = array_reverse($files);
 
     foreach ($files as $file) {
-      require_once "$file";
+      include_once "$file";
+      preg_match('/.*\/\d+-(.*)\.php/', $file, $matches);
+      $classname = 'Madebit\\WordpressDataMigration\\' . $matches[1];
 
-      if ($filter($VERSION)) {
-        error_log('Executing migration: ' . $VERSION);
-        $cb();
-        update_option('madebit_migration_version', $VERSION);
+      /**
+       * @var AbstractMigration
+       */
+      $class = new $classname();
+      error_log($class->version());
+
+      if ($filter($class->version())) {
+        error_log('Executing migration: ' . $class->version());
+        $cb($class);
+        update_option('madebit_migration_version', $class->version());
+      }
       }
     }
-  }
 
-  /**
-   * Rest api endpoint
-   */
-  public function migrate(\WP_Rest_Request $request)
-  {
-    if ($request->has_param('version')) {
-      $version = intval($request->get_param('version'));
-      DataMigration::forMigrations(
-        fn($v) => $v == $version,
-        fn() => up()
-      );
+    /**
+     * Rest api endpoint
+     */
+    public
+    function migrate(\WP_Rest_Request $request)
+    {
+      if ($request->has_param('version')) {
+        $version = intval($request->get_param('version'));
+        DataMigration::forMigrations(
+          fn($v) => $v == $version,
+          fn($class) => $class->up()
+        );
 
-      return 'ok?';
+        return 'OK';
+      }
+
+      DataMigration::check_migration();
+
+      return 'OK';
     }
-
-    DataMigration::check_migration();
-
-    return 'OK';
   }
-}

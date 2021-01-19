@@ -19,24 +19,33 @@ add_action('init', function () {
 });
 ```
 
-In the migrations folder, create a migration file. These files should be ordened chronologically.
+In the migrations folder, create a migration file. These files should be ordened chronologically followed by a dash `-`
+and the classname.
 ```bash
-touch migrations/20210118-do-this-and-that.php
+touch migrations/20210118-DoThisAndThat.php
 ```
 
 The file should look like this
 ```php
 <?php
-$VERSION = 1;
 
-function up()
-{
-  // migrate data when migrating up
-}
+namespace Madebit\WordpressDataMigration;
 
-function down()
-{
-  // migrate data when migrating down
+class DoThisAndThat extends \Madebit\WordpressDataMigration\AbstractMigration {
+
+    public function version() {
+      return 1;
+    }
+
+    public function up()
+    {
+      // migrate data when migrating up
+    }
+
+    public function down()
+    {
+      // migrate data when migrating down
+    }
 }
 ?>
 ```
