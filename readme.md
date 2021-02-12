@@ -19,10 +19,10 @@ add_action('init', function () {
 });
 ```
 
-In the migrations folder, create a migration file. These files should be ordened chronologically followed by a dash `-`
-and the classname.
+In the migrations folder, create a migration file. These files should be constructed with the version number and the classname.
+${VERSION}-${ClassName}.php
 ```bash
-touch migrations/20210118-DoThisAndThat.php
+touch migrations/1-DoThisAndThat.php
 ```
 
 The file should look like this
@@ -32,10 +32,6 @@ The file should look like this
 namespace Madebit\WordpressDataMigration;
 
 class DoThisAndThat extends \Madebit\WordpressDataMigration\AbstractMigration {
-
-    public function version() {
-      return 1;
-    }
 
     public function up()
     {

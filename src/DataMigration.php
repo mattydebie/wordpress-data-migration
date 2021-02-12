@@ -63,46 +63,55 @@ class DataMigration
 
   static private function forMigrations(callable $filter, callable $cb, $reverse = false)
   {
-    $files = glob(DataMigration::$path . '*.php');
-    if ($reverse) $files = array_reverse($files);
+    $files = [];
 
-    foreach ($files as $file) {
-      include_once "$file";
-      preg_match('/.*\/\d+-(.*)\.php/', $file, $matches);
-      $classname = 'Madebit\\WordpressDataMigration\\' . $matches[1];
-
-      /**
-       * @var AbstractMigration
-       */
-      $class = new $classname();
-      error_log($class->version());
-
-      if ($filter($class->version())) {
-        error_log('Executing migration: ' . $class->version());
-        $cb($class);
-        update_option('madebit_migration_version', $class->version());
-      }
-      }
+    foreach (glob(DataMigration::$path . '*.php') as $file) {
+      preg_match('|^/?.*/(\d+)-(.*)\.php$|', $file, $match);
+      $files[$match[1]] = (object)[
+        'path' => $file,
+        'class' => $match[2],
+      ];
     }
 
-    /**
-     * Rest api endpoint
-     */
-    public
-    function migrate(\WP_Rest_Request $request)
-    {
-      if ($request->has_param('version')) {
-        $version = intval($request->get_param('version'));
-        DataMigration::forMigrations(
-          fn($v) => $v == $version,
-          fn($class) => $class->up()
-        );
+    if ($reverse)
+      krsort($files, SORT_NATURAL);
+    else
+      ksort($files, SORT_NATURAL);
 
-        return 'OK';
+
+    foreach ($files as $version => $migration) {
+      if ($filter($version)) {
+        include_once "" . $migration->path;
+        $classname = 'Madebit\\WordpressDataMigration\\' . $migration->class;
+
+        /**
+         * @var AbstractMigration
+         */
+        $class = new $classname();
+        error_log('Executing migration: ' . $version);
+        $cb($class);
+        update_option('madebit_migration_version', $version);
       }
-
-      DataMigration::check_migration();
-
-      return 'OK';
     }
   }
+
+  /**
+   * Rest api endpoint
+   */
+  public function migrate(\WP_Rest_Request $request)
+  {
+    if ($request->has_param('version')) {
+      $version = intval($request->get_param('version'));
+      DataMigration::forMigrations(
+        fn($v) => $v == $version,
+        fn($class) => $class->up()
+      );
+
+      return 'OK, version ' . $version;
+    }
+
+    DataMigration::check_migration();
+
+    return 'OK';
+  }
+}
